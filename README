@@ -1,0 +1,102 @@
+docker create \
+       --driver digitalocean \
+       default 
+
+docker-machine ls
+docker-machine ssh default
+docker-machine rm default
+docker-machine env default
+
+docker run -d -p 80:80 nginx
+
+make Dockerfile
+docker build -t app .
+--> to build image called app
+
+docker run -it app /bin/bash
+--> walk in container
+
+[better way to walk in container]
+docker run -d -p 8080:80 app
+docker exec -it 21a59dd8a693c6489e31d95d14dc5e223b7c6a450a4d455fc2afaa03a3b91a6c /bin/bash
+--> it ,interactive between us/container
+--> hash process number
+--> command
+
+docker ps
+docker logs 419beb0f92f6
+--> view log of process ID
+
+docker rm -f 419beb0f92f6
+--> remove container by container ID
+
+docker inspect php | more
+docker inspect app | more
+--> find out image spec by spec name 'php' or 'app'
+
+** docker registry
+- like a git lab, it is the docker repository server
+
+docker ps -q
+--> show running containers ID
+
+docker tag php:latest app:1
+docker tag app:latest app:2
+--> change repository name & tag
+
+Docker Swarm
+============
+Cluster concept
+---------------
+- 1 Discovery Service
+- 1 Master
+- N Nodes
+
+command: make consul
+# docker-machine create -d digitalocean \
+  --engine-label region=singapore \
+  consul
+
+# eval $(docker-machine env consul)
+
+# docker run -d \
+  --net=host \
+  --name=consul \
+  progrium/consul:latest \
+  -server -bootstrap-expect 1 -ui-dir /ui
+
+command: make swarm master
+docker-machine create -d digitalocean \
+  --engine-opt cluster-store=consul://$(docker-machine ip consul):8500 \
+  --engine-opt cluster-advertise=eth0:2376 \
+  --swarm \
+  --swarm-master \
+  --swarm-discovery consul://$(docker-machine ip consul):8500/discovery \
+  master
+--> eth0 ,is default network interface of digitalocean
+--> --swarm , itself is one of swarm node
+--> --swarm-master , itselt is swarm master
+--> --swarm-discovery ,address for registering
+
+command: register node 1 to master
+docker-machine create -d digitalocean \
+  --engine-opt cluster-store=consul://$(docker-machine ip consul):8500 \
+  --engine-opt cluster-advertise=eth0:2376 \
+  --swarm \
+  --swarm-discovery consul://$(docker-machine ip consul):8500/discovery \
+  node-1
+
+eval $(docker-machine env --swarm-master)
+--> connect to swarm-master
+
+docker network create -d overlay multihost
+docker run -d --name box1 --net multihost busybox top
+docker run --name box2 --net multihost -it busybox /bin/sh
+--> like a vpn box1 and box2 can diferrence network but work together like same network
+--> must run after eval $(docker-machine env --swarm-master)
+
+docker-compose
+--> run with yaml file
+~                  
+
+

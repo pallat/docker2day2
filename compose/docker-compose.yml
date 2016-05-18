@@ -1,0 +1,24 @@
+version: "2"
+services:
+  nginx:
+    build: ./nginx
+    networks:
+    - front
+  java:
+    build: ./java
+    command: tail -f /dev/null
+    networks:
+    - front
+    - back
+  db:
+    image: alpine
+    command: tail -f /dev/null
+    networks:
+    - back
+
+networks:
+  front:
+    driver: overlay
+  back:
+    driver: overlay
+~                  
